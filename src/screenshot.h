@@ -28,7 +28,7 @@ private slots:
     void shootScreen();
 
 private:
-    void updateScreenshotLabel();
+    void updateScreenshotLabel(qreal);
 
     QPixmap originalPixmap;
     QLabel *screenshotLabel;

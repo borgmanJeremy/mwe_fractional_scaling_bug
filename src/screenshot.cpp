@@ -10,37 +10,53 @@
 Screenshot::Screenshot()
         :  screenshotLabel(new QLabel(this))
 {
-    screenshotLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    screenshotLabel->setAlignment(Qt::AlignCenter);
-
-    const QRect screenGeometry = screen()->geometry();
-    screenshotLabel->setMinimumSize(screenGeometry.width() / 8, screenGeometry.height() / 8);
+    setWindowFlags(Qt::BypassWindowManagerHint | Qt::WindowStaysOnTopHint | Qt::FramelessWindowHint | Qt::Tool);
 
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
+    mainLayout->setMargin(0);
     mainLayout->addWidget(screenshotLabel);
-
     shootScreen();
+    move(0,0);
+    this->showFullScreen();
 
-    resize(300, 200);
 }
 
 void Screenshot::shootScreen()
 {
-    QScreen *screen = QGuiApplication::primaryScreen();
-    if (const QWindow *window = windowHandle()) {
-        screen = window->screen();
-    }
-    if (!screen) {
-        return;
+
+    QRect geometry;
+    for (QScreen* const screen : QGuiApplication::screens()) {
+        QRect scrRect = screen->geometry();
+        scrRect.moveTo(scrRect.x() / screen->devicePixelRatio(),
+                       scrRect.y() / screen->devicePixelRatio());
+        geometry = geometry.united(scrRect);
     }
 
-    originalPixmap = screen->grabWindow(0);
-    updateScreenshotLabel();
+    originalPixmap = (QApplication::primaryScreen()->grabWindow(
+            QApplication::desktop()->winId(),
+            geometry.x(),
+            geometry.y(),
+            geometry.width(),
+            geometry.height()));
+    auto screenNumber = QApplication::desktop()->screenNumber();
+
+    screenshotLabel->setMinimumSize(geometry.width() , geometry.height() );
+
+    QScreen* screen = QApplication::screens()[screenNumber];
+    originalPixmap.setDevicePixelRatio(screen->devicePixelRatio());
+
+    updateScreenshotLabel(screen->devicePixelRatio());
+    resize(originalPixmap.size());
+
 }
 
-void Screenshot::updateScreenshotLabel()
+void Screenshot::updateScreenshotLabel(qreal pixel_ratio)
 {
-    screenshotLabel->setPixmap(originalPixmap.scaled(screenshotLabel->size(),
-                                                     Qt::KeepAspectRatio,
-                                                     Qt::SmoothTransformation));
+    auto scaled_pixmap = originalPixmap.scaled(screenshotLabel->size()*pixel_ratio,
+                                               Qt::KeepAspectRatio,
+                                               Qt::SmoothTransformation);
+
+    screenshotLabel->resize(scaled_pixmap.size());
+    screenshotLabel->setPixmap(scaled_pixmap);
+    screenshotLabel->resize(scaled_pixmap.size());
 }
