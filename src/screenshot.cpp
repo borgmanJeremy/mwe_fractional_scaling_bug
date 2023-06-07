@@ -4,7 +4,6 @@
 
 
 #include <QtWidgets>
-
 #include "screenshot.h"
 
 Screenshot::Screenshot()
@@ -13,11 +12,15 @@ Screenshot::Screenshot()
     setWindowFlags(Qt::BypassWindowManagerHint | Qt::WindowStaysOnTopHint | Qt::FramelessWindowHint | Qt::Tool);
 
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
-    mainLayout->setMargin(0);
+    mainLayout->setContentsMargins(0,0,0,0);
     mainLayout->addWidget(screenshotLabel);
     shootScreen();
     move(0,0);
     this->showFullScreen();
+
+    // Sleep for 5 seconds and then exit
+    QTimer::singleShot(5000, this, SLOT(close()));
+
 
 }
 
@@ -32,17 +35,18 @@ void Screenshot::shootScreen()
         geometry = geometry.united(scrRect);
     }
 
+    qDebug() << "geometry: " << geometry;
+
     originalPixmap = (QApplication::primaryScreen()->grabWindow(
-            QApplication::desktop()->winId(),
+            0,
             geometry.x(),
             geometry.y(),
             geometry.width(),
             geometry.height()));
-    auto screenNumber = QApplication::desktop()->screenNumber();
 
     screenshotLabel->setMinimumSize(geometry.width() , geometry.height() );
 
-    QScreen* screen = QApplication::screens()[screenNumber];
+    QScreen* screen = qApp->screenAt(QCursor::pos());
     originalPixmap.setDevicePixelRatio(screen->devicePixelRatio());
 
     updateScreenshotLabel(screen->devicePixelRatio());

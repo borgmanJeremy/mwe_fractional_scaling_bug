@@ -28,4 +28,3 @@ enable_sanitizers(project_options)
 
 # allow for static analysis options include(cmake/StaticAnalyzers.cmake)
 add_subdirectory(src)
-
